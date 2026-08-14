@@ -9,6 +9,7 @@ use ReflectionMethod;
 use ReflectionNamedType;
 use ReflectionUnionType;
 use RuntimeException;
+use Wizard\Introspection\ActionSurface;
 
 /**
  * Lê uma Ação via Reflect + leitura do arquivo-fonte
@@ -19,11 +20,23 @@ use RuntimeException;
 final class Introspector {
 
     private const HTTP_PATTERNS = [
-        "Http:.","GuzzleHttp", "CurlHandler", "curl_", "Illuminate\\Http\\Request",
-        "extends Controller", "Http\\Client"
+        'Http:.','GuzzleHttp', 'CurlHandler', 'curl_', 'Illuminate\\Http\\Request',
+        'extends Controller', 'Http\\Client',
     ];
 
     private const FILES_EXTENSIONS = [
-        "Http"
+        'file_get_contents', 'file_put_contents', 'file', 'fopen', 'readfile',
+        'Storage::', 'is_readable', 'unlink', 'fwrite'
     ];
+
+    private const DB_PATTERNS = [
+        'DB::', '::query(', 'Eloquent\\Model', 'PDO', '->query(', 'Builder',
+    ];
+
+    public function inspector(string $ClassName, string $MethodName): ActionSurface
+    {
+        if(!class_exists($ClassName)) {
+            throw new RuntimeException("Class $ClassName does not exist");
+        }
+    }
 }
