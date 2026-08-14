@@ -1,0 +1,18 @@
+{
+    "name": "worza/framework-3d",
+    "require-dev": {
+        "pestphp/pest": "^3.0"
+    },
+    "authors": [
+        {
+            "name": "CarloshenriqueSousa",
+            "email": "carlos.henrique.sousa_@outlook.com"
+        }
+    ],
+    "require": {},
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
+}
