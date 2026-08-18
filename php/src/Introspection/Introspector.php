@@ -10,6 +10,7 @@ use ReflectionNamedType;
 use ReflectionUnionType;
 use RuntimeException;
 use Wizard\Introspection\ActionSurface;
+use Wizard\Introspection\ParamSurface;
 
 /**
  * Lê uma Ação via Reflect + leitura do arquivo-fonte
@@ -38,5 +39,36 @@ final class Introspector {
         if(!class_exists($ClassName)) {
             throw new RuntimeException("Class $ClassName does not exist");
         }
+
+        $reflectionClass = new ReflectionClass($ClassName);
+
+        if(!$reflectionClass->hasMethod($MethodName)) {
+            throw new RuntimeException("Method $MethodName does not exist: {$ClassName}");
+        }
+
+        $method = $reflectionClass->getMethod($MethodName);
+
+        $params = array_map(
+            fn($p) => new ParamSurface(
+                name: $p->getName(),
+                type: $this->TypetoString($p->getType()),
+                nullable: $p->isNullable(),
+                hasDefault: $p->getDefaultValueAvaliable(),
+                default: $p->isDefaultValueAvailable() ? $p->getDefaultValue() : null,
+            ),
+            $method->getParameters()
+        );
+
+        $source = $this->readMethodSource($method);
+
+        return new ActionSurface(
+            ClassName: $ClassName,
+            MethodName: $method,
+            Params: $params,
+            ReturnType: $this->typeToString($method->getReturnType()),
+            touchesHttp: $this->matchesAny($source, self::HTTP_PATTERNS),
+            touchesFile: $this->matchesAny($source, self::FILES_EXTENSIONS),
+            
+        );
     }
 }
