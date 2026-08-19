@@ -36,13 +36,13 @@ final class Introspector {
 
     public function inspector(string $ClassName, string $MethodName): ActionSurface
     {
-        if(!class_exists($ClassName)) {
+        if (!class_exists($ClassName)) {
             throw new RuntimeException("Class $ClassName does not exist");
         }
 
         $reflectionClass = new ReflectionClass($ClassName);
 
-        if(!$reflectionClass->hasMethod($MethodName)) {
+        if (!$reflectionClass->hasMethod($MethodName)) {
             throw new RuntimeException("Method $MethodName does not exist: {$ClassName}");
         }
 
@@ -68,7 +68,67 @@ final class Introspector {
             ReturnType: $this->typeToString($method->getReturnType()),
             touchesHttp: $this->matchesAny($source, self::HTTP_PATTERNS),
             touchesFile: $this->matchesAny($source, self::FILES_EXTENSIONS),
-            
+            touchesDb: $this->matchesAny($source, self::DB_PATTERNS),
         );
     }
+
+        public function inspectorFromReference(string $reference) {
+            if (str_contains($reference, '::')) {
+                [$className, $methodName] = explode('::', $reference, 2);
+            } else {
+                $className = $reference;
+                $methodName = '__invoke';
+            }
+
+            return $this->inspector($className, $methodName);
+        }
+
+        private function typeToString(ReflectionNamedType | ReflectionUnionType | null $type): ?string
+        {
+            if($type == null) {
+                return null;
+            }
+            if($type instanceof ReflectionUnionType) {
+                return implode('|', array_map(
+                    fn($t) => $t->getName(),
+                    $type->getTypes()
+                ));
+            }
+
+            $prefix = $type->allowsNull() && $type->getName() !== 'mixed' ? '?' : ':';
+            return $prefix . $type->getName();
+        }
+
+        private function readMethodSource(ReflectionMethod $method): string {
+        $file = $method->getFileName();
+
+            if (!$file ==  false) {
+                return '';
+            }
+
+            $startLine = $method->getStartLine();
+            $endLine = $method->getEndLine();
+
+            if ($startLine == false || $endLine == false) {
+                return '';
+            }
+
+            $lines = file($file);
+
+            if($lines === false) {
+                return '';
+            }
+
+            return implode('', array_slice($lines, $startLine -1, $endLine - $startLine + 1));
+        }
+
+        private function matchesAny(string $haystack, array $patterns): bool {
+            foreach ($patterns as $pattern) {
+                if (str_contains($haystack, $pattern)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
 }
