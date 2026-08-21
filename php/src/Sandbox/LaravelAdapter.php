@@ -47,6 +47,14 @@ final class LaravelAdapter implements SandboxAdapter {
             return method_exists($disk, 'path') ? $disk->path('') : sys_get_temp_dir();
         }
 
-        
+        $path = sys_get_temp_dir() . '/wizard-sanbox' . bin2hex(random_bytes(8));
+        mdkir($path, 0700, true);
+
+        return $path;
+    }
+
+    public function cleanupFilesSystemPath(string $path) : void
+    {
+
     }
 }
